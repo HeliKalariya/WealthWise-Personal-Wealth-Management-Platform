@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   location: { type: String, default: '' },
   role: { type: String, default: 'user' },
+  resetPasswordToken: { type: String, default: undefined },
+  resetPasswordExpires: { type: Date, default: undefined },
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

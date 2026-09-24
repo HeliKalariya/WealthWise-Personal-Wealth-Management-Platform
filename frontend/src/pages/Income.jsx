@@ -3,33 +3,318 @@ import { Pencil, Plus, Trash2, TrendingUp, X } from "lucide-react";
 import { api } from "../api/client";
 
 const rupees = (amount) => `₹${new Intl.NumberFormat("en-IN").format(amount)}`;
-const emptyForm = { category: "", amount: "", date: new Date().toISOString().slice(0, 10), description: "" };
+const emptyForm = {
+  category: "",
+  amount: "",
+  date: new Date().toISOString().slice(0, 10),
+  description: "",
+};
+const emptyIncomes = [];
 
 /** Show one compact modal for both creating and editing income. */
 function IncomeModal({ income, close, reload }) {
-  const [form, setForm] = useState(emptyForm); const [error, setError] = useState("");
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState("");
   /** Populate the modal whenever the selected income changes. */
-  useEffect(() => { setError(""); setForm(income ? { category: income.category, amount: income.amount, date: new Date(income.date).toISOString().slice(0, 10), description: income.description } : emptyForm); }, [income]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setError("");
+    setForm(
+      income
+        ? {
+            category: income.category,
+            amount: income.amount,
+            date: new Date(income.date).toISOString().slice(0, 10),
+            description: income.description,
+          }
+        : emptyForm,
+    );
+  }, [income]);
   /** Create or update the income record, depending on whether it has an id. */
-  const submit = async (event) => { event.preventDefault(); try { const path = income ? `/transactions/${income._id}` : "/transactions"; await api(path, { method: income ? "PATCH" : "POST", body: JSON.stringify({ ...form, amount: Number(form.amount), type: "income", description: form.description || form.category }) }); close(); reload(); } catch (requestError) { setError(requestError.message); } };
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 p-4"><form onSubmit={submit} className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-2xl font-bold text-slate-900">{income ? "Edit income" : "Add income"}</h2><button type="button" onClick={close} className="text-slate-500"><X size={22} /></button></div><div className="mt-5 grid gap-4"><label className="grid gap-2 text-base font-medium">Source<input required placeholder="Salary, Freelance, Dividends..." value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-2 text-base font-medium">Amount<input required type="number" min="1" placeholder="0.00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500" /></label><label className="grid gap-2 text-base font-medium">Date<input required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500" /></label></div><label className="grid gap-2 text-base font-medium">Description<textarea placeholder="Optional notes" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="min-h-22 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500" /></label></div>{error && <p className="mt-3 text-sm text-rose-500">{error}</p>}<div className="mt-6 flex justify-end gap-3"><button type="button" onClick={close} className="rounded-xl border border-slate-200 px-5 py-3 font-semibold">Cancel</button><button className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white">{income ? "Update income" : "Save income"}</button></div></form></div>;
+  const submit = async (event) => {
+    event.preventDefault();
+    try {
+      const path = income ? `/transactions/${income._id}` : "/transactions";
+      await api(path, {
+        method: income ? "PATCH" : "POST",
+        body: JSON.stringify({
+          ...form,
+          amount: Number(form.amount),
+          type: "income",
+          description: form.description || form.category,
+        }),
+      });
+      close();
+      reload();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 p-4">
+      <form
+        onSubmit={submit}
+        className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">
+            {income ? "Edit income" : "Add income"}
+          </h2>
+          <button type="button" onClick={close} className="text-slate-500">
+            <X size={22} />
+          </button>
+        </div>
+        <div className="mt-5 grid gap-4">
+          <label className="grid gap-2 text-base font-medium">
+            Source
+            <input
+              required
+              placeholder="Salary, Freelance, Dividends..."
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
+            />
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-base font-medium">
+              Amount
+              <input
+                required
+                type="number"
+                min="1"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
+              />
+            </label>
+            <label className="grid gap-2 text-base font-medium">
+              Date
+              <input
+                required
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
+              />
+            </label>
+          </div>
+          <label className="grid gap-2 text-base font-medium">
+            Description
+            <textarea
+              placeholder="Optional notes"
+              value={form.description}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+              className="min-h-22 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
+            />
+          </label>
+        </div>
+        {error && <p className="mt-3 text-sm text-rose-500">{error}</p>}
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={close}
+            className="rounded-xl border border-slate-200 px-5 py-3 font-semibold"
+          >
+            Cancel
+          </button>
+          <button className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white">
+            {income ? "Update income" : "Save income"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 /** Ask for confirmation before deleting an income record. */
 function DeleteModal({ income, close, confirm }) {
   if (!income) return null;
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 p-4"><div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-bold text-slate-900">Delete income?</h2><p className="mt-3 text-slate-500">Are you sure you want to delete <b>{income.category}</b>? This action cannot be undone.</p><div className="mt-6 flex justify-end gap-3"><button onClick={close} className="rounded-xl border border-slate-200 px-4 py-2.5 font-semibold">Cancel</button><button onClick={() => confirm(income._id)} className="rounded-xl bg-rose-500 px-4 py-2.5 font-semibold text-white">Yes, delete</button></div></div></div>;
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h2 className="text-xl font-bold text-slate-900">Delete income?</h2>
+        <p className="mt-3 text-slate-500">
+          Are you sure you want to delete <b>{income.category}</b>? This action
+          cannot be undone.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={close}
+            className="rounded-xl border border-slate-200 px-4 py-2.5 font-semibold"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => confirm(income._id)}
+            className="rounded-xl bg-rose-500 px-4 py-2.5 font-semibold text-white"
+          >
+            Yes, delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** Display API-backed income records in the original page layout. */
 export default function Income() {
-  const [incomes, setIncomes] = useState([]); const [editing, setEditing] = useState(null); const [deleting, setDeleting] = useState(null); const [error, setError] = useState("");
-  /** Fetch income data for the current user. */
-  const load = async () => { try { setIncomes((await api("/transactions?type=income")).transactions); } catch (requestError) { setError(requestError.message); } };
-  useEffect(() => { load(); }, []);
+  const [incomes, setIncomes] = useState(emptyIncomes);
+  const [error, setError] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  /** Load income transactions for the current user. */
+  const load = async () => {
+    try {
+      setIncomes((await api("/transactions?type=income")).transactions);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, []);
   /** Delete a confirmed income record and refresh the screen. */
-  const remove = async (id) => { await api(`/transactions/${id}`, { method: "DELETE" }); setDeleting(null); load(); };
-  const stats = useMemo(() => { const total = incomes.reduce((sum, item) => sum + item.amount, 0); const months = new Set(incomes.map((item) => new Date(item.date).toISOString().slice(0, 7))).size || 1; const currentMonth = new Date().toISOString().slice(0, 7); return { total, thisMonth: incomes.filter((item) => new Date(item.date).toISOString().slice(0, 7) === currentMonth).reduce((sum, item) => sum + item.amount, 0), average: Math.round(total / months) }; }, [incomes]);
-  const cards = [["TOTAL THIS YEAR", stats.total, "+18% vs last period"], ["THIS MONTH", stats.thisMonth, "+4% vs last period"], ["AVG. MONTHLY", stats.average, "+7% vs last period"]];
-  return <section className="mx-auto w-full max-w-[1480px]"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div><h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-[38px]">Income</h1><p className="mt-1 text-base text-slate-500">Track every source of money flowing in.</p></div><button onClick={() => setEditing({})} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 sm:w-auto"><Plus size={20} /> Add Income</button></div><div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{cards.map(([title, value, trend]) => <article key={title} className="flex min-h-38 items-center justify-between rounded-2xl bg-white p-6 shadow-[0_5px_16px_rgba(15,23,42,0.05)]"><div><p className="text-sm font-medium tracking-wide text-slate-500">{title}</p><p className="mt-2 text-3xl font-bold text-slate-950">{rupees(value)}</p><p className="mt-3 text-sm font-medium text-emerald-500">{trend}</p></div><span className="grid h-14 w-14 place-items-center rounded-full bg-emerald-500 text-white"><TrendingUp size={24} /></span></article>)}</div>{error && <p className="mt-4 text-rose-500">{error}</p>}<div className="mt-8 overflow-x-auto rounded-2xl bg-white shadow-[0_5px_16px_rgba(15,23,42,0.05)]"><table className="w-full min-w-[900px] border-collapse"><thead className="border-b border-slate-200 bg-slate-50 text-slate-500"><tr><th>Date</th><th>Source</th><th>Amount</th><th>Description</th><th>Actions</th></tr></thead><tbody>{incomes.map((income) => <tr key={income._id} className="border-b border-slate-200 last:border-0"><td>{new Date(income.date).toLocaleDateString("en-CA")}</td><td><span className="rounded-full bg-slate-100 px-3 py-1 text-sm">{income.category}</span></td><td className="font-semibold text-emerald-500">+{rupees(income.amount)}</td><td>{income.description}</td><td><div className="flex justify-center gap-3"><button onClick={() => setEditing(income)} className="text-slate-900" title="Edit income"><Pencil size={18} /></button><button onClick={() => setDeleting(income)} className="text-rose-500" title="Delete income"><Trash2 size={18} /></button></div></td></tr>)}</tbody></table>{incomes.length === 0 && <p className="p-8 text-center text-slate-500">No income transactions yet. Click Add Income to begin.</p>}</div>{editing && <IncomeModal income={editing._id ? editing : null} close={() => setEditing(null)} reload={load} />}<DeleteModal income={deleting} close={() => setDeleting(null)} confirm={remove} /></section>;
+  const remove = async (id) => {
+    await api(`/transactions/${id}`, { method: "DELETE" });
+    setDeleting(null);
+    load();
+  };
+  const stats = useMemo(() => {
+    const total = incomes.reduce((sum, item) => sum + item.amount, 0);
+    const months =
+      new Set(
+        incomes.map((item) => new Date(item.date).toISOString().slice(0, 7)),
+      ).size || 1;
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    return {
+      total,
+      thisMonth: incomes
+        .filter(
+          (item) =>
+            new Date(item.date).toISOString().slice(0, 7) === currentMonth,
+        )
+        .reduce((sum, item) => sum + item.amount, 0),
+      average: Math.round(total / months),
+    };
+  }, [incomes]);
+  const cards = [
+    ["TOTAL THIS YEAR", stats.total],
+    ["THIS MONTH", stats.thisMonth],
+    ["AVG. MONTHLY", stats.average],
+  ];
+  return (
+    <section className="mx-auto w-full max-w-[1480px]">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-[38px]">
+            Income
+          </h1>
+          <p className="mt-1 text-base text-slate-500">
+            Track every source of money flowing in.
+          </p>
+        </div>
+        <button
+          onClick={() => setEditing({})}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 sm:w-auto"
+        >
+          <Plus size={20} /> Add Income
+        </button>
+      </div>
+      <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {cards.map(([title, value]) => (
+          <article
+            key={title}
+            className="flex min-h-38 items-center justify-between rounded-2xl bg-white p-6 shadow-[0_5px_16px_rgba(15,23,42,0.05)]"
+          >
+            <div>
+              <p className="text-sm font-medium tracking-wide text-slate-500">
+                {title}
+              </p>
+              <p className="mt-2 text-3xl font-bold text-slate-950">
+                {rupees(value)}
+              </p>
+              <p className="mt-3 text-sm font-medium text-emerald-500">
+                Based on saved income
+              </p>
+            </div>
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-emerald-500 text-white">
+              <TrendingUp size={24} />
+            </span>
+          </article>
+        ))}
+      </div>
+      {error && <p className="mt-4 text-rose-500">{error}</p>}
+      <div className="mt-8 overflow-x-auto rounded-2xl bg-white shadow-[0_5px_16px_rgba(15,23,42,0.05)]">
+        <table className="w-full min-w-[900px] border-collapse">
+          <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
+            <tr>
+              <th>Date</th>
+              <th>Source</th>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {incomes.map((income) => (
+              <tr
+                key={income._id}
+                className="border-b border-slate-200 last:border-0"
+              >
+                <td>{new Date(income.date).toLocaleDateString("en-CA")}</td>
+                <td>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-sm">
+                    {income.category}
+                  </span>
+                </td>
+                <td className="font-semibold text-emerald-500">
+                  +{rupees(income.amount)}
+                </td>
+                <td>{income.description}</td>
+                <td>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      onClick={() => setEditing(income)}
+                      className="text-slate-900"
+                      title="Edit income"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => setDeleting(income)}
+                      className="text-rose-500"
+                      title="Delete income"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {incomes.length === 0 && (
+          <p className="p-8 text-center text-slate-500">
+            No income transactions yet. Click Add Income to begin.
+          </p>
+        )}
+      </div>
+      {editing && (
+        <IncomeModal
+          income={editing._id ? editing : null}
+          close={() => setEditing(null)}
+          reload={load}
+        />
+      )}
+      <DeleteModal
+        income={deleting}
+        close={() => setDeleting(null)}
+        confirm={remove}
+      />
+    </section>
+  );
 }

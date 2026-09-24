@@ -12,7 +12,7 @@ export default function DashboardLayout() {
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <div className="flex min-w-0 flex-1 flex-col lg:ml-72">
-        <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-white px-4">
+        <header className="sticky top-0 z-30 flex h-16 items-center border-b border-slate-200 last:border-0 bg-white px-4">
           <button
             onClick={() => setIsOpen(true)}
             className="mr-3 lg:hidden"

@@ -12,6 +12,7 @@ function GoalModal({ goal, close, reload }) {
 
   /** Prefill the modal when the user edits an existing goal. */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setError("");
     setForm(goal ? { name: goal.name, target: goal.target, current: goal.current, targetDate: new Date(goal.targetDate).toISOString().slice(0, 10), category: goal.category || "Savings" } : emptyForm);
   }, [goal]);
@@ -78,13 +79,13 @@ function GoalCard({ goal, onEdit, onDelete }) {
 /** Show API-backed goal cards with real add, edit and delete actions. */
 export default function Goals() {
   const [goals, setGoals] = useState([]);
+  const [error, setError] = useState("");
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [error, setError] = useState("");
-
   /** Fetch financial goals from the protected API. */
   const load = async () => { try { setGoals((await api("/goals")).goals); } catch (requestError) { setError(requestError.message); } };
-  useEffect(() => { load(); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void load(); }, []);
   /** Delete a confirmed goal, then refresh the goal card list. */
   const remove = async (id) => { await api(`/goals/${id}`, { method: "DELETE" }); setDeleting(null); load(); };
 

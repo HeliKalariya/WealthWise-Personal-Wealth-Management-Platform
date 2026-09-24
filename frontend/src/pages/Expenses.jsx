@@ -1,34 +1,325 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Pencil, PiggyBank, Plus, Trash2, TrendingDown, X } from "lucide-react";
+import {
+  CalendarDays,
+  Pencil,
+  PiggyBank,
+  Plus,
+  Trash2,
+  TrendingDown,
+  X,
+} from "lucide-react";
 import { api } from "../api/client";
 
 const rupees = (amount) => `₹${new Intl.NumberFormat("en-IN").format(amount)}`;
-const emptyForm = { category: "Food", amount: "", description: "", date: new Date().toISOString().slice(0, 10) };
+const expenseCategories = ["Food", "Travel", "Shopping", "Entertainment", "Bills", "Healthcare", "Education", "Others"];
+const emptyForm = {
+  category: "Food",
+  amount: "",
+  description: "",
+  date: new Date().toISOString().slice(0, 10),
+};
 
 /** Use the same compact modal design as Income for adding and editing expenses. */
 function ExpenseModal({ expense, close, reload }) {
-  const [form, setForm] = useState(emptyForm); const [error, setError] = useState("");
+  const [form, setForm] = useState(emptyForm);
+  const [error, setError] = useState("");
   /** Fill the form with existing values when the user clicks edit. */
-  useEffect(() => { setError(""); setForm(expense ? { category: expense.category, amount: expense.amount, description: expense.description, date: new Date(expense.date).toISOString().slice(0, 10) } : emptyForm); }, [expense]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setError("");
+    setForm(
+      expense
+        ? {
+            category: expense.category,
+            amount: expense.amount,
+            description: expense.description,
+            date: new Date(expense.date).toISOString().slice(0, 10),
+          }
+        : emptyForm,
+    );
+  }, [expense]);
   /** Save either a new expense or an edited expense to MongoDB. */
-  const submit = async (event) => { event.preventDefault(); try { await api(expense ? `/transactions/${expense._id}` : "/transactions", { method: expense ? "PATCH" : "POST", body: JSON.stringify({ ...form, amount: Number(form.amount), type: "expense" }) }); close(); reload(); } catch (requestError) { setError(requestError.message); } };
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 p-4"><form onSubmit={submit} className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-2xl font-bold text-slate-900">{expense ? "Edit expense" : "Add expense"}</h2><button type="button" onClick={close} className="text-slate-500"><X size={22} /></button></div><div className="mt-5 grid gap-4"><label className="grid gap-2 text-base font-medium">Category<input required placeholder="Food, Travel, Shopping..." value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-2 text-base font-medium">Amount<input required type="number" min="1" placeholder="0.00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500" /></label><label className="grid gap-2 text-base font-medium">Date<input required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500" /></label></div><label className="grid gap-2 text-base font-medium">Description<textarea required placeholder="What was this expense for?" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="min-h-22 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500" /></label></div>{error && <p className="mt-3 text-sm text-rose-500">{error}</p>}<div className="mt-6 flex justify-end gap-3"><button type="button" onClick={close} className="rounded-xl border border-slate-200 px-5 py-3 font-semibold">Cancel</button><button className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white">{expense ? "Update expense" : "Save expense"}</button></div></form></div>;
+  const submit = async (event) => {
+    event.preventDefault();
+    try {
+      await api(expense ? `/transactions/${expense._id}` : "/transactions", {
+        method: expense ? "PATCH" : "POST",
+        body: JSON.stringify({
+          ...form,
+          amount: Number(form.amount),
+          type: "expense",
+        }),
+      });
+      close();
+      reload();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 p-4">
+      <form
+        onSubmit={submit}
+        className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">
+            {expense ? "Edit expense" : "Add expense"}
+          </h2>
+          <button type="button" onClick={close} className="text-slate-500">
+            <X size={22} />
+          </button>
+        </div>
+        <div className="mt-5 grid gap-4">
+          <label className="grid gap-2 text-base font-medium">
+            Category
+            <select
+              required
+              value={form.category}
+              onChange={(event) => setForm({ ...form, category: event.target.value })}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-blue-500"
+            >
+              {expenseCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-base font-medium">
+              Amount
+              <input
+                required
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
+              />
+            </label>
+            <label className="grid gap-2 text-base font-medium">
+              Date
+              <input
+                required
+                type="date"
+                max={new Date().toISOString().slice(0, 10)}
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
+              />
+            </label>
+          </div>
+          <label className="grid gap-2 text-base font-medium">
+            Description
+            <textarea
+              required
+              placeholder="What was this expense for?"
+              value={form.description}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+              className="min-h-22 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
+            />
+          </label>
+        </div>
+        {error && <p className="mt-3 text-sm text-rose-500">{error}</p>}
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={close}
+            className="rounded-xl border border-slate-200 px-5 py-3 font-semibold"
+          >
+            Cancel
+          </button>
+          <button className="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white">
+            {expense ? "Update expense" : "Save expense"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 /** Ask for a small centered confirmation before deleting an expense. */
 function DeleteModal({ expense, close, confirm }) {
   if (!expense) return null;
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 p-4"><div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-bold text-slate-900">Delete expense?</h2><p className="mt-3 text-slate-500">Are you sure you want to delete <b>{expense.description}</b>? This action cannot be undone.</p><div className="mt-6 flex justify-end gap-3"><button onClick={close} className="rounded-xl border border-slate-200 px-4 py-2.5 font-semibold">Cancel</button><button onClick={() => confirm(expense._id)} className="rounded-xl bg-rose-500 px-4 py-2.5 font-semibold text-white">Yes, delete</button></div></div></div>;
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h2 className="text-xl font-bold text-slate-900">Delete expense?</h2>
+        <p className="mt-3 text-slate-500">
+          Are you sure you want to delete <b>{expense.description}</b>? This
+          action cannot be undone.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={close}
+            className="rounded-xl border border-slate-200 px-4 py-2.5 font-semibold"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => confirm(expense._id)}
+            className="rounded-xl bg-rose-500 px-4 py-2.5 font-semibold text-white"
+          >
+            Yes, delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** Display expenses in the same card/table layout used by Income. */
 export default function Expenses() {
-  const [items, setItems] = useState([]); const [editing, setEditing] = useState(null); const [deleting, setDeleting] = useState(null); const [error, setError] = useState("");
-  /** Fetch expense transactions belonging to the current logged-in user. */
-  const load = async () => { try { setItems((await api("/transactions?type=expense")).transactions); } catch (requestError) { setError(requestError.message); } };
-  useEffect(() => { load(); }, []);
+  const [items, setItems] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [error, setError] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  /** Load expenses and budgets required by this page. */
+  const load = async () => {
+    try {
+      const [expenseResponse, budgetResponse] = await Promise.all([api("/transactions?type=expense"), api("/budgets")]);
+      setItems(expenseResponse.transactions);
+      setBudgets(budgetResponse.budgets);
+    } catch (requestError) { setError(requestError.message); }
+  };
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void load(); }, []);
   /** Delete a confirmed expense record then reload the table. */
-  const remove = async (id) => { await api(`/transactions/${id}`, { method: "DELETE" }); setDeleting(null); load(); };
-  const total = items.reduce((sum, item) => sum + item.amount, 0);
-  return <section className="mx-auto max-w-[1480px]"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div><h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-[38px]">Expenses</h1><p className="mt-1 text-base text-slate-500">Every rupee spent — categorized and tracked.</p></div><button onClick={() => setEditing({})} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 sm:w-auto"><Plus size={20} /> Add Expense</button></div><div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3"><article className="flex min-h-38 items-center justify-between rounded-2xl bg-white p-6 shadow-sm"><div><p className="text-sm text-slate-500">TODAY'S EXPENSE</p><p className="mt-2 text-3xl font-bold">₹0</p></div><CalendarDays className="rounded-2xl bg-orange-500 p-3 text-white" size={54} /></article><article className="flex min-h-38 items-center justify-between rounded-2xl bg-white p-6 shadow-sm"><div><p className="text-sm text-slate-500">MONTHLY EXPENSE</p><p className="mt-2 text-3xl font-bold">{rupees(total)}</p></div><TrendingDown className="rounded-2xl bg-rose-500 p-3 text-white" size={54} /></article><article className="flex min-h-38 items-center justify-between rounded-2xl bg-white p-6 shadow-sm"><div><p className="text-sm text-slate-500">REMAINING BUDGET</p><p className="mt-2 text-3xl font-bold">—</p></div><PiggyBank className="rounded-2xl bg-emerald-500 p-3 text-white" size={54} /></article></div>{error && <p className="mt-4 text-rose-500">{error}</p>}<div className="mt-8 overflow-x-auto rounded-2xl bg-white shadow-sm"><table className="w-full min-w-[900px]"><thead className="border-b bg-slate-50 text-slate-500"><tr><th>Date</th><th>Category</th><th>Amount</th><th>Description</th><th>Actions</th></tr></thead><tbody>{items.map((item) => <tr key={item._id} className="border-b"><td>{new Date(item.date).toLocaleDateString("en-CA")}</td><td><span className="rounded-full bg-slate-100 px-3 py-1">{item.category}</span></td><td className="font-bold">{rupees(item.amount)}</td><td>{item.description}</td><td><div className="flex justify-center gap-3"><button onClick={() => setEditing(item)} className="text-slate-900" title="Edit expense"><Pencil size={18} /></button><button onClick={() => setDeleting(item)} className="text-rose-500" title="Delete expense"><Trash2 size={18} /></button></div></td></tr>)}</tbody></table>{items.length === 0 && <p className="p-8 text-center text-slate-500">No expenses added yet.</p>}</div>{editing && <ExpenseModal expense={editing._id ? editing : null} close={() => setEditing(null)} reload={load} />}<DeleteModal expense={deleting} close={() => setDeleting(null)} confirm={remove} /></section>;
+  const remove = async (id) => {
+    await api(`/transactions/${id}`, { method: "DELETE" });
+    setDeleting(null);
+    load();
+  };
+  // The Expense page shows only this month's budget usage in its summary cards.
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthlyItems = items.filter(
+    (item) => new Date(item.date).toISOString().slice(0, 7) === currentMonth,
+  );
+  const total = monthlyItems.reduce((sum, item) => sum + item.amount, 0);
+  const monthlyBudget = budgets
+    .filter((budget) => budget.month === currentMonth)
+    .reduce((sum, budget) => sum + budget.amount, 0);
+  const today = new Date().toISOString().slice(0, 10);
+  const todayTotal = items
+    .filter((item) => new Date(item.date).toISOString().slice(0, 10) === today)
+    .reduce((sum, item) => sum + item.amount, 0);
+  return (
+    <section className="mx-auto max-w-[1480px]">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-[38px]">
+            Expenses
+          </h1>
+          <p className="mt-1 text-base text-slate-500">
+            Every rupee spent — categorized and tracked.
+          </p>
+        </div>
+        <button
+          onClick={() => setEditing({})}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 sm:w-auto"
+        >
+          <Plus size={20} /> Add Expense
+        </button>
+      </div>
+      <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <article className="flex min-h-38 items-center justify-between rounded-2xl bg-white p-6 shadow-sm">
+          <div>
+            <p className="text-sm text-slate-500">TODAY'S EXPENSE</p>
+            <p className="mt-2 text-3xl font-bold">{rupees(todayTotal)}</p>
+          </div>
+          <CalendarDays
+            className="rounded-2xl bg-orange-500 p-3 text-white"
+            size={54}
+          />
+        </article>
+        <article className="flex min-h-38 items-center justify-between rounded-2xl bg-white p-6 shadow-sm">
+          <div>
+            <p className="text-sm text-slate-500">MONTHLY EXPENSE</p>
+            <p className="mt-2 text-3xl font-bold">{rupees(total)}</p>
+          </div>
+          <TrendingDown
+            className="rounded-2xl bg-rose-500 p-3 text-white"
+            size={54}
+          />
+        </article>
+        <article className="flex min-h-38 items-center justify-between rounded-2xl bg-white p-6 shadow-sm">
+          <div>
+            <p className="text-sm text-slate-500">REMAINING BUDGET</p>
+            <p className="mt-2 text-3xl font-bold">
+              {rupees(monthlyBudget - total)}
+            </p>
+          </div>
+          <PiggyBank
+            className="rounded-2xl bg-emerald-500 p-3 text-white"
+            size={54}
+          />
+        </article>
+      </div>
+      {error && <p className="mt-4 text-rose-500">{error}</p>}
+      <div className="mt-8 overflow-x-auto rounded-2xl bg-white shadow-sm">
+        <table className="w-full min-w-[900px]">
+          <thead className="border-b border-slate-200 last:border-0 text-slate-500">
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item._id} className="border-b border-slate-200 last:border-0">
+                <td>{new Date(item.date).toLocaleDateString("en-CA")}</td>
+                <td>
+                  <span className="rounded-full bg-slate-100 px-3 py-1">
+                    {item.category}
+                  </span>
+                </td>
+                <td className="font-bold">{rupees(item.amount)}</td>
+                <td>{item.description}</td>
+                <td>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      onClick={() => setEditing(item)}
+                      className="text-slate-900"
+                      title="Edit expense"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => setDeleting(item)}
+                      className="text-rose-500"
+                      title="Delete expense"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {items.length === 0 && (
+          <p className="p-8 text-center text-slate-500">
+            No expenses added yet.
+          </p>
+        )}
+      </div>
+      {editing && (
+        <ExpenseModal
+          expense={editing._id ? editing : null}
+          close={() => setEditing(null)}
+          reload={load}
+        />
+      )}
+      <DeleteModal
+        expense={deleting}
+        close={() => setDeleting(null)}
+        confirm={remove}
+      />
+    </section>
+  );
 }

@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Auth from "./pages/Auth";
+import { ForgotPassword, ResetPassword } from "./pages/PasswordRecovery";
 import { useAuth } from "./context/AuthContext";
 
 import Dashboard from "./pages/Dashboard";
@@ -24,6 +25,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<Auth />} />
         <Route path="/register" element={<Auth register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/income" element={<Income />} />

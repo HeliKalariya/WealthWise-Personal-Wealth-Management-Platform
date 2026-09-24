@@ -1,18 +1,206 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
-import { Camera, LockKeyhole, Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
+import {
+  
+  LockKeyhole,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+} from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 /** Display and update the profile data stored in MongoDB. */
 export default function Profile() {
-  const { setUser } = useAuth(); const [profile, setProfile] = useState({ name: "", email: "", phone: "", location: "" }); const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirm: "" }); const [message, setMessage] = useState("");
-  /** Load the current user's profile from the API. */
-  const load = async () => { const data = await api("/profile"); setProfile(data.user); setUser(data.user); };
-  useEffect(() => { load().catch((error) => setMessage(error.message)); }, []);
+  const { setUser } = useAuth();
+  const [profileResponse, setProfileResponse] = useState(null);
+  const [profileError, setProfileError] = useState("");
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+  });
+  const [passwords, setPasswords] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirm: "",
+  });
+  const [message, setMessage] = useState("");
+  /** Load the authenticated user's profile directly in the page. */
+  useEffect(() => {
+    const loadProfile = async () => {
+      try { setProfileResponse(await api("/profile")); } catch (requestError) { setProfileError(requestError.message); }
+    };
+    void loadProfile();
+  }, []);
+  useEffect(() => {
+    if (!profileResponse?.user) return;
+    setProfile(profileResponse.user);
+    setUser(profileResponse.user);
+  }, [profileResponse, setUser]);
   /** Save edited profile fields through the profile endpoint. */
-  const saveProfile = async (event) => { event.preventDefault(); try { const data = await api("/profile", { method: "PATCH", body: JSON.stringify(profile) }); setProfile(data.user); setUser(data.user); setMessage("Profile updated successfully."); } catch (error) { setMessage(error.message); } };
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    try {
+      const data = await api("/profile", {
+        method: "PATCH",
+        body: JSON.stringify(profile),
+      });
+      setProfile(data.user);
+      setUser(data.user);
+      setMessage("Profile updated successfully.");
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
   /** Validate and submit the selected new password. */
-  const changePassword = async (event) => { event.preventDefault(); if (passwords.newPassword !== passwords.confirm) return setMessage("New passwords do not match."); try { const data = await api("/profile/password", { method: "PATCH", body: JSON.stringify(passwords) }); setMessage(data.message); setPasswords({ currentPassword: "", newPassword: "", confirm: "" }); } catch (error) { setMessage(error.message); } };
-  const updateProfile = (field, value) => setProfile((current) => ({ ...current, [field]: value }));
-  return <main className="mx-auto max-w-[1480px]"><div className="grid gap-7 xl:grid-cols-[minmax(320px,.8fr)_minmax(0,1.7fr)]"><aside className="overflow-hidden rounded-3xl bg-white shadow-sm"><div className="h-30 bg-gradient-to-br from-blue-600 to-indigo-500" /><div className="px-7 pb-8"><div className="relative -mt-9 grid h-30 w-30 place-items-center rounded-full border-4 border-white bg-blue-600 text-3xl font-bold text-white">{profile.name.split(" ").map((part) => part[0]).join("").slice(0, 2) || "U"}<Camera className="absolute bottom-0 right-0 rounded-full bg-blue-600 p-2" size={32} /></div><h1 className="mt-5 text-2xl font-bold">{profile.name || "Your profile"}</h1><p className="text-slate-500">WealthWise member</p><span className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-600">Premium member</span><div className="mt-7 space-y-4 text-slate-500"><p className="flex gap-3"><Mail size={20} />{profile.email}</p><p className="flex gap-3"><Phone size={20} />{profile.phone || "Add a phone number"}</p><p className="flex gap-3"><MapPin size={20} />{profile.location || "Add your location"}</p></div></div></aside><div className="space-y-7"><form onSubmit={saveProfile} className="rounded-3xl bg-white p-6 shadow-sm sm:p-8"><h2 className="text-xl font-bold">Personal Information</h2><div className="mt-7 grid gap-5 sm:grid-cols-2">{[["name", "Full name"], ["email", "Email"], ["phone", "Phone"], ["location", "Location"]].map(([field, label]) => <label key={field} className="grid gap-2 font-medium">{label}<input value={profile[field] || ""} onChange={(e) => updateProfile(field, e.target.value)} className="rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500" /></label>)}</div><button className="mt-7 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white">Update profile</button></form><form onSubmit={changePassword} className="rounded-3xl bg-white p-6 shadow-sm sm:p-8"><h2 className="flex gap-3 text-xl font-bold"><ShieldCheck />Change Password</h2><div className="mt-7 grid gap-5"><label className="grid gap-2 font-medium">Current password<input required type="password" value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} className="rounded-xl border p-3" /></label><div className="grid gap-5 sm:grid-cols-2"><label className="grid gap-2 font-medium">New password<input required minLength="6" type="password" value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} className="rounded-xl border p-3" /></label><label className="grid gap-2 font-medium">Confirm new password<input required type="password" value={passwords.confirm} onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })} className="rounded-xl border p-3" /></label></div></div><button className="mt-7 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white"><LockKeyhole size={18} />Change password</button></form>{message && <p className="font-medium text-emerald-600">{message}</p>}</div></div></main>;
+  const changePassword = async (event) => {
+    event.preventDefault();
+    if (passwords.newPassword !== passwords.confirm)
+      return setMessage("New passwords do not match.");
+    try {
+      const data = await api("/profile/password", {
+        method: "PATCH",
+        body: JSON.stringify(passwords),
+      });
+      setMessage(data.message);
+      setPasswords({ currentPassword: "", newPassword: "", confirm: "" });
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+  const updateProfile = (field, value) =>
+    setProfile((current) => ({ ...current, [field]: value }));
+  const visibleMessage = message || profileError;
+  return (
+    <main className="mx-auto max-w-[1480px]">
+      <div className="grid gap-7 xl:grid-cols-[minmax(320px,.8fr)_minmax(0,1.7fr)]">
+        <aside className="overflow-hidden rounded-3xl bg-white shadow-sm">
+          <div className="h-30 bg-gradient-to-br from-blue-600 to-indigo-500" />
+          <div className="px-7 pb-8">
+            <div className="relative -mt-9 grid h-30 w-30 place-items-center rounded-full border-4 border-white bg-blue-600 text-3xl font-bold text-white">
+              {profile.name
+                .split(" ")
+                .map((part) => part[0])
+                .join("")
+                .slice(0, 2) || "U"}
+              {/* <Camera
+                className="absolute bottom-0 right-0 rounded-full bg-blue-600 p-2"
+                size={32}
+              /> */}
+            </div>
+            <h1 className="mt-5 text-2xl font-bold">
+              {profile.name || "Your profile"}
+            </h1>
+            
+            <div className="mt-7 space-y-4 text-slate-500">
+              <p className="flex gap-3">
+                <Mail size={20} />
+                {profile.email}
+              </p>
+              <p className="flex gap-3">
+                <Phone size={20} />
+                {profile.phone || "Add a phone number"}
+              </p>
+              <p className="flex gap-3">
+                <MapPin size={20} />
+                {profile.location || "Add your location"}
+              </p>
+            </div>
+          </div>
+        </aside>
+        <div className="space-y-7">
+          <form
+            onSubmit={saveProfile}
+            className="rounded-3xl bg-white p-6 shadow-sm sm:p-8"
+          >
+            <h2 className="text-xl font-bold">Personal Information</h2>
+            <div className="mt-7 grid gap-5 sm:grid-cols-2">
+              {[
+                ["name", "Full name"],
+                ["email", "Email"],
+                ["phone", "Phone"],
+                ["location", "Location"],
+              ].map(([field, label]) => (
+                <label key={field} className="grid gap-2 font-medium">
+                  {label}
+                  <input
+                    value={profile[field] || ""}
+                    onChange={(e) => updateProfile(field, e.target.value)}
+                    className="rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500"
+                  />
+                </label>
+              ))}
+            </div>
+            <button className="mt-7 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white">
+              Update profile
+            </button>
+          </form>
+          <form
+            onSubmit={changePassword}
+            className="rounded-3xl bg-white p-6 shadow-sm sm:p-8"
+          >
+            <h2 className="flex gap-3 text-xl font-bold">
+              <ShieldCheck />
+              Change Password
+            </h2>
+            <div className="mt-7 grid gap-5">
+              <label className="grid gap-2 font-medium">
+                Current password
+                <input
+                  required
+                  type="password"
+                  value={passwords.currentPassword}
+                  onChange={(e) =>
+                    setPasswords({
+                      ...passwords,
+                      currentPassword: e.target.value,
+                    })
+                  }
+                  className="rounded-xl border p-3"
+                />
+              </label>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="grid gap-2 font-medium">
+                  New password
+                  <input
+                    required
+                    minLength="6"
+                    type="password"
+                    value={passwords.newPassword}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        newPassword: e.target.value,
+                      })
+                    }
+                    className="rounded-xl border p-3"
+                  />
+                </label>
+                <label className="grid gap-2 font-medium">
+                  Confirm new password
+                  <input
+                    required
+                    type="password"
+                    value={passwords.confirm}
+                    onChange={(e) =>
+                      setPasswords({ ...passwords, confirm: e.target.value })
+                    }
+                    className="rounded-xl border p-3"
+                  />
+                </label>
+              </div>
+            </div>
+            <button className="mt-7 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white">
+              <LockKeyhole size={18} />
+              Change password
+            </button>
+          </form>
+          {visibleMessage && <p className="font-medium text-emerald-600">{visibleMessage}</p>}
+        </div>
+      </div>
+    </main>
+  );
 }

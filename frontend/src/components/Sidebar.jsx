@@ -29,7 +29,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       />
 
       <aside
-        className={`fixed top-0 left-0 z-50 flex h-screen w-72 flex-col justify-between border-r bg-white transition-transform duration-300
+        className={`fixed top-0 left-0 z-50 flex h-screen w-72 flex-col justify-between border-r border-slate-200 last:border-0 bg-white transition-transform duration-300
         ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }
@@ -37,7 +37,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       >
         {/* Logo */}
         <div>
-          <div className="flex items-center justify-between border-b p-6">
+          <div className="flex items-center justify-between border-b border-slate-200 last:border-0 p-6">
             <div className="flex items-center gap-3">
               <span className="grid h-12 w-12 place-items-center rounded-full bg-indigo-500 text-white"><ChartNoAxesCombined size={24} strokeWidth={2.5} /></span>
               <div className="leading-tight"><h1 className="text-lg font-bold text-slate-950">Wealth</h1><p className="text-xs font-semibold tracking-wide text-slate-500">MANAGEMENT</p></div>
@@ -76,7 +76,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           </nav>
         </div>
 
-        <div className="border-t p-4">
+        <div className="border-t border-slate-300  p-4">
           <button onClick={logout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-gray-600 hover:bg-gray-100">
             <LogOut size={20} />
             Logout
