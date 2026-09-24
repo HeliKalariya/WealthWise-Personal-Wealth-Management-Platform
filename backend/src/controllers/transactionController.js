@@ -11,7 +11,7 @@ const expenseCategories = [
   "Others",
 ];
 
-/** Validate simple transaction fields before data is saved to MongoDB. */
+/** Validatation */
 const validateTransaction = ({ type, category, amount, description, date }) => {
   if (!["income", "expense"].includes(type))
     return "Transaction type must be income or expense.";
@@ -26,7 +26,6 @@ const validateTransaction = ({ type, category, amount, description, date }) => {
   return null;
 };
 
-/** List the logged-in user's transactions, optionally filtered by type. */
 export const getTransactions = async (request, response, next) => {
   try {
     const filter = { user: request.user._id };
@@ -38,7 +37,7 @@ export const getTransactions = async (request, response, next) => {
   }
 };
 
-/** Save one new income or expense transaction for the logged-in user. */
+/** create new transaction */
 export const createTransaction = async (request, response, next) => {
   try {
     const { type, category, amount, description, date } = request.body;
@@ -67,7 +66,7 @@ export const createTransaction = async (request, response, next) => {
   }
 };
 
-/** Update one transaction that belongs to the logged-in user. */
+/** Update one transaction  */
 export const updateTransaction = async (request, response, next) => {
   try {
     const existingTransaction = await Transaction.findOne({
@@ -103,7 +102,7 @@ export const updateTransaction = async (request, response, next) => {
   }
 };
 
-/** Delete one transaction that belongs to the logged-in user. */
+/** Delete one transaction  */
 export const deleteTransaction = async (request, response, next) => {
   try {
     const transaction = await Transaction.findOneAndDelete({
