@@ -12,8 +12,10 @@ import { api } from "../api/client";
 
 const rupees = (amount) => `₹${new Intl.NumberFormat("en-IN").format(amount)}`;
 const expenseCategories = ["Food", "Travel", "Shopping", "Entertainment", "Bills", "Healthcare", "Education", "Others"];
+const paymentMethods = ["Cash", "UPI", "Debit Card", "Credit Card"];
 const emptyForm = {
   category: "Food",
+  paymentMethod: "Cash",
   amount: "",
   description: "",
   date: new Date().toISOString().slice(0, 10),
@@ -31,6 +33,7 @@ function ExpenseModal({ expense, close, reload }) {
       expense
         ? {
             category: expense.category,
+            paymentMethod: expense.paymentMethod || "Cash",
             amount: expense.amount,
             description: expense.description,
             date: new Date(expense.date).toISOString().slice(0, 10),
@@ -80,6 +83,23 @@ function ExpenseModal({ expense, close, reload }) {
               className="rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-blue-500"
             >
               {expenseCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-base font-medium">
+            Payment method
+            <select
+              required
+              value={form.paymentMethod}
+              onChange={(event) =>
+                setForm({ ...form, paymentMethod: event.target.value })
+              }
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-blue-500"
+            >
+              {paymentMethods.map((method) => (
+                <option key={method} value={method}>
+                  {method}
+                </option>
+              ))}
             </select>
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -192,6 +212,18 @@ export default function Expenses() {
     setDeleting(null);
     load();
   };
+  /** Call the dedicated PATCH API when a payment method changes in the table. */
+  const updatePaymentMethod = async (id, paymentMethod) => {
+    try {
+      await api(`/transactions/${id}/payment-method`, {
+        method: "PATCH",
+        body: JSON.stringify({ paymentMethod }),
+      });
+      load();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
   // The Expense page shows only this month's budget usage in its summary cards.
   const currentMonth = new Date().toISOString().slice(0, 7);
   const monthlyItems = items.filter(
@@ -264,6 +296,7 @@ export default function Expenses() {
             <tr>
               <th>Date</th>
               <th>Category</th>
+              <th>Payment Method</th>
               <th>Amount</th>
               <th>Description</th>
               <th>Actions</th>
@@ -277,6 +310,22 @@ export default function Expenses() {
                   <span className="rounded-full bg-slate-100 px-3 py-1">
                     {item.category}
                   </span>
+                </td>
+                <td>
+                  <select
+                    value={item.paymentMethod || "Cash"}
+                    onChange={(event) =>
+                      updatePaymentMethod(item._id, event.target.value)
+                    }
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm"
+                    aria-label={`Payment method for ${item.description}`}
+                  >
+                    {paymentMethods.map((method) => (
+                      <option key={method} value={method}>
+                        {method}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 <td className="font-bold">{rupees(item.amount)}</td>
                 <td>{item.description}</td>

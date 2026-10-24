@@ -10,14 +10,24 @@ const expenseCategories = [
   "Education",
   "Others",
 ];
+const paymentMethods = ["Cash", "UPI", "Debit Card", "Credit Card"];
 
 /** Validate simple transaction fields before data is saved to MongoDB. */
-const validateTransaction = ({ type, category, amount, description, date }) => {
+const validateTransaction = ({
+  type,
+  category,
+  paymentMethod,
+  amount,
+  description,
+  date,
+}) => {
   if (!["income", "expense"].includes(type))
     return "Transaction type must be income or expense.";
   if (!category?.trim()) return "Please select or enter a category.";
   if (type === "expense" && !expenseCategories.includes(category))
     return "Please select a valid expense category.";
+  if (type === "expense" && !paymentMethods.includes(paymentMethod || "Cash"))
+    return "Please select a valid payment method.";
   if (!Number.isFinite(Number(amount)) || Number(amount) <= 0)
     return "Amount must be greater than 0.";
   if (!description?.trim()) return "Description is required.";
@@ -41,10 +51,11 @@ export const getTransactions = async (request, response, next) => {
 /** Save one new income or expense transaction for the logged-in user. */
 export const createTransaction = async (request, response, next) => {
   try {
-    const { type, category, amount, description, date } = request.body;
+    const { type, category, paymentMethod, amount, description, date } = request.body;
     const validationError = validateTransaction({
       type,
       category,
+      paymentMethod,
       amount,
       description,
       date,
@@ -57,6 +68,7 @@ export const createTransaction = async (request, response, next) => {
       user: request.user._id,
       type,
       category: category.trim(),
+      paymentMethod: paymentMethod || "Cash",
       amount: Number(amount),
       description: description.trim(),
       date,
@@ -97,6 +109,37 @@ export const updateTransaction = async (request, response, next) => {
       },
       { new: true, runValidators: true },
     );
+    response.json({ success: true, transaction });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** Update only the payment method */
+export const updatePaymentMethod = async (request, response, next) => {
+  try {
+    const { paymentMethod } = request.body;
+    if (!paymentMethods.includes(paymentMethod)) {
+      return response.status(400).json({
+        success: false,
+        message: "Please select a valid payment method.",
+      });
+    }
+    const transaction = await Transaction.findOneAndUpdate(
+      {
+        _id: request.params.id,
+        user: request.user._id,
+        type: "expense",
+      },
+      { paymentMethod },
+      { new: true, runValidators: true },
+    );
+    if (!transaction) {
+      return response.status(404).json({
+        success: false,
+        message: "Expense not found.",
+      });
+    }
     response.json({ success: true, transaction });
   } catch (error) {
     next(error);
